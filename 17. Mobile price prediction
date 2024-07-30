@@ -1,0 +1,67 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+
+# Load your dataset
+data = pd.read_csv('E:/Machine learning/mobileprice.csv')
+
+# Display column names to verify them
+print("Columns in the dataset:", data.columns)
+
+# Define features and target variable
+X = data.drop('price_category', axis=1)
+y = data['price_category']
+
+# Print a few rows of the DataFrame to inspect
+print("Sample data:\n", X.head())
+
+# List of numeric and categorical features
+numeric_features = ['ram', 'storage', 'screen_size']  # Update these names based on your actual dataset
+categorical_features = ['brand', 'os']  # Update these names based on your actual dataset
+
+# Ensure there are no leading/trailing spaces in column names
+X.columns = X.columns.str.strip()
+
+# Check if all specified columns exist in the DataFrame
+for feature in numeric_features + categorical_features:
+    if feature not in X.columns:
+        print(f"Column '{feature}' is not in the DataFrame")
+        
+# Filter out only the columns that exist in the DataFrame
+numeric_features = [feature for feature in numeric_features if feature in X.columns]
+categorical_features = [feature for feature in categorical_features if feature in X.columns]
+
+# If there are no categorical features left, handle that case
+if not categorical_features:
+    print("No categorical features found in the DataFrame.")
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), numeric_features)
+        ])
+else:
+    # Preprocess features
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), numeric_features),
+            ('cat', OneHotEncoder(), categorical_features)
+        ])
+
+# Define the model pipeline
+model = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', RandomForestClassifier())
+])
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Make predictions and evaluate
+y_pred = model.predict(X_test)
+print(classification_report(y_test, y_pred))
